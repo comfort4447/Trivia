@@ -6,6 +6,8 @@ import random
 
 from models import setup_db, Question, Category
 
+
+
 QUESTIONS_PER_PAGE = 10
 
 def paginate_categories(request, selection):
@@ -58,21 +60,31 @@ def create_app(test_config=None):
     Create an endpoint to handle GET requests
     for all available categories.
     """
-    @app.route("/categories")
+    @app.route('/categories')
     def retrieve_categories():
-        selection = Category.query.order_by(Category.id).all()
-        current_categories = paginate_questions(request, selection)
+        try:
+            selection = Category.query.order_by(Category.id).all()
+            categories = (category.format() for category in selection)
+            categories = list(categories)
 
-        if len(current_categories) == 0:
+            if len(selection) == 0:
+                abort(404)
+
+            categories = Category.query.order_by(Category.id).all()
+            categories_dict = {}
+            for category in categories: 
+                categories_dict[category.id] = category.type
+
+            return jsonify({
+                'success': True, 
+                'categories': categories,
+                'total_categories': len(selection),
+                'categories' : categories_dict,
+                'current_category' : None
+            })
+
+        except:
             abort(404)
-
-        return jsonify(
-            {
-                "success": True,
-                "categories": current_categories,
-                "total_categories": len(Category.query.all()),
-            }
-        )
 
 #  @TODO:
 #     Create an endpoint to handle GET requests for questions,
@@ -90,19 +102,29 @@ def create_app(test_config=None):
 #     """
     @app.route("/questions")
     def retrieve_questions():
-        selection = Question.query.order_by(Question.id).all()
-        current_questions = paginate_questions(request, selection)
+        try:
+            selection = Question.query.order_by(Question.id).all()
+            current_questions = paginate_questions(request, selection)
 
-        if len(current_questions) == 0:
+            if len(current_questions) == 0:
+                abort(404)
+
+            categories = Category.query.order_by(Category.id).all()
+            categories_dict = {}
+            for category in categories:
+                categories_dict[category.id] = category.type
+
+            return jsonify(
+                {
+                    "success": True,
+                    "questions": current_questions,
+                    "total_questions": len(Question.query.all()),
+                    "categories": categories_dict,
+                    "current_category": None
+                }
+            )
+        except:
             abort(404)
-
-        return jsonify(
-            {
-                "success": True,
-                "questions": current_questions,
-                "total_questions": len(Question.query.all()),
-            }
-        )
 
     # @TODO:
     # Create an endpoint to DELETE question using a question ID.
@@ -120,6 +142,7 @@ def create_app(test_config=None):
 
             if question is None:
                 abort(404)
+
             question.delete()
             selection = Question.query.order_by(Question.id).all()
             current_question = paginate_questions(request,selection)
@@ -146,6 +169,17 @@ def create_app(test_config=None):
 #     of the questions list in the "List" tab.
 #     """
 
+# """
+#     @TODO:
+#     Create a POST endpoint to get questions based on a search term.
+#     It should return any questions for whom the search term
+#     is a substring of the question.
+
+#     TEST: Search by any phrase. The questions list will update to include
+#     only question that include that string within their question.
+#     Try using the word "title" to start.
+#     """
+
     @app.route("/questions", methods=["POST"])
     def create_questions():
         body = request.get_json()
@@ -154,45 +188,86 @@ def create_app(test_config=None):
         new_answer = body.get("answer", None)
         new_difficulty = body.get("difficulty", None)
         new_category = body.get("category", None)
+        searchTerm = body.get("searchTerm", None)
 
         try:
-            question = Question(question=new_question, answer=new_answer, difficulty=new_difficulty, 
-            category=new_category)
-            question.insert()
+            if searchTerm:
+                selection = Question.query.order_by(Question.id).filter(Question.question.ilike('%{}%'.format(searchTerm))).all()
+                current_question = paginate_questions(request, selection)
 
-            selection = Question.query.order_by(Question.id).all()
-            current_question = paginate_questions(request, selection)
+                return jsonify({
+                    'success': True,
+                    'questions': current_question,
+                    'total_questions': len(selection)
+                })
 
-            return jsonify({
-                "success": True,
-                "created": question.id,
-                "questions": current_question,
-                "tottal_questions": len(Question.query.all()),
-            })
+            else:
+                question = Question(question=new_question, answer=new_answer, difficulty=new_difficulty, 
+                category=new_category)
+                question.insert()
+
+                selection = Question.query.order_by(Question.id).all()
+                current_question = paginate_questions(request, selection)
+
+                return jsonify({
+                    "success": True,
+                    "created": question.id,
+                    "questions": current_question,
+                    "tottal_questions": len(Question.query.all()),
+                })
         except:
             abort(422)
 
     
 
-    """
-    @TODO:
-    Create a POST endpoint to get questions based on a search term.
-    It should return any questions for whom the search term
-    is a substring of the question.
+    
 
-    TEST: Search by any phrase. The questions list will update to include
-    only question that include that string within their question.
-    Try using the word "title" to start.
-    """
+    # """
+    # # @TODO:
+    # # Create a GET endpoint to get questions based on category.
 
-    """
-    @TODO:
-    Create a GET endpoint to get questions based on category.
+    # # TEST: In the "List" tab / main screen, clicking on one of the
+    # # categories in the left column will cause only questions of that
+    # # category to be shown.
+    # # """
 
-    TEST: In the "List" tab / main screen, clicking on one of the
-    categories in the left column will cause only questions of that
-    category to be shown.
-    """
+    @app.route('/categories/<int:category_id>')
+    def get_questions_from_category(category_id):
+        try:
+            selection = Question.query.filter(Question.category == category_id).all()
+            current_question = paginate_questions(request, selection)
+
+            return jsonify({
+                'succes': True,
+                'questions': current_question,
+                'total_questions': len(selection)
+            })
+        except:
+            abort(404)
+
+    @app.route('/categories/<int:category_id>/questions')
+    def get_questions_for_category(category_id):
+        try:
+            selection = Question.query.order_by(Question.id).filter(Question.category == category_id).all()
+            current_question = paginate_questions(request, selection)
+
+            if len(current_question) == 0:
+                abort(404)
+
+            current_category = Category.query.filter(Category.id == category_id).one_or_none()
+            category_name = current_category.type
+        
+            return jsonify({
+                'success': True, 
+                'questions': current_question,
+                'total_questions': len(selection),
+                'current_category' : category_name
+            })      
+
+        except:
+            abort(404)
+
+    
 
     """
     @TODO:
@@ -214,3 +289,5 @@ def create_app(test_config=None):
 
     return app
 
+# if __name__ == "__main__":
+#     app.run(debug=True, port=5000)
