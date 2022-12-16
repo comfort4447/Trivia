@@ -60,7 +60,7 @@ def create_app(test_config=None):
     Create an endpoint to handle GET requests
     for all available categories.
     """
-    @app.route('/categories')
+    @app.route('/categories', methods=['GET'])
     def retrieve_categories():
         try:
             selection = Category.query.order_by(Category.id).all()
@@ -80,7 +80,6 @@ def create_app(test_config=None):
                 'categories': categories,
                 'total_categories': len(selection),
                 'categories' : categories_dict,
-                'current_category' : None
             })
 
         except:
@@ -100,7 +99,7 @@ def create_app(test_config=None):
 #     """
 
 #     """
-    @app.route("/questions")
+    @app.route("/questions", methods=['GET'])
     def retrieve_questions():
         try:
             selection = Question.query.order_by(Question.id).all()
@@ -269,23 +268,78 @@ def create_app(test_config=None):
 
     
 
-    """
-    @TODO:
-    Create a POST endpoint to get questions to play the quiz.
-    This endpoint should take category and previous question parameters
-    and return a random questions within the given category,
-    if provided, and that is not one of the previous questions.
+    # """
+    # @TODO:
+    # Create a POST endpoint to get questions to play the quiz.
+    # This endpoint should take category and previous question parameters
+    # and return a random questions within the given category,
+    # if provided, and that is not one of the previous questions.
 
-    TEST: In the "Play" tab, after a user selects "All" or a category,
-    one question at a time is displayed, the user is allowed to answer
-    and shown whether they were correct or not.
-    """
+    # TEST: In the "Play" tab, after a user selects "All" or a category,
+    # one question at a time is displayed, the user is allowed to answer
+    # and shown whether they were correct or not.
+    # """
 
-    """
-    @TODO:
-    Create error handlers for all expected errors
-    including 404 and 422.
-    """
+    @app.route('/quizzes', methods=['POST'])
+    def create_quiz():
+        try:
+            body = request.get_json()
+            quizCategory = body.get('quiz_category', None)
+            previousQuestion = body.get('previous_questions', None)
+            quizCategory = quizCategory['id']
+            selection = []
+
+            if quizCategory == 0:
+                questions = Question.query.all()
+                # questions = Question.query.filter(Question.id.not_in(previousQuestion)).all
+            else: 
+                questions = Question.query.filter(Question.category == quizCategory).all()
+            for question in questions:
+                if question.id not in previousQuestion:
+                    selection.append(question)
+            
+            if len(selection) == 0:
+                return jsonify({
+                    'question': False
+                })
+
+            random_question = random.choice(selection)
+            previousQuestion.append(random_question.id)
+
+            return jsonify({
+                'question': {
+                    'id' : random_question.id, 
+                    'question' : random_question.question,
+                    'answer' : random_question.answer,
+                    'difficulty' : random_question.difficulty,
+                    'category' : random_question.category
+                },
+                'success' : True,
+                'previousQuestion' : previousQuestion
+            })
+        except:
+            abort(422)
+
+    # """
+    # @TODO:
+    # Create error handlers for all expected errors
+    # including 404 and 422.
+    # """
+
+    @app.errorhandler(404)
+    def not_found(error):
+        return (
+            jsonify({"success": False, "error": 404, "message": "resource not found"}),
+            404,
+        )
+
+
+    @app.errorhandler(422)
+    def unprocessable(error):
+        return (
+            jsonify({"success": False, "error": 422, "message": "unprocessable"}),
+            422,
+        )
 
     return app
 

@@ -3,9 +3,10 @@ import unittest
 import json
 from flask_sqlalchemy import SQLAlchemy
 
-from flaskr import create_app
+from flaskr import create_app, Flask
 from models import setup_db, Question, Category
 
+app = Flask(__name__)
 
 class TriviaTestCase(unittest.TestCase):
     """This class represents the trivia test case"""
@@ -33,6 +34,53 @@ class TriviaTestCase(unittest.TestCase):
     TODO
     Write at least one test for each test for successful operation and for expected errors.
     """
+
+    #paginated_questions
+    def test_get_paginated_questions(self):
+        with app.app_context():
+            res = self.client().get('/questions')
+            data = json.loads(res.data)
+
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(data['success'], True)
+            self.assertTrue(data['total_questions'])
+            self.assertTrue(len(data['questions']))
+
+    #paginated_questions for failure
+    def test_get_paginated_questions_failure(self):
+        res = self.client().get("/questions?page=1000")
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "resource not found")
+
+     #Retrieve Categories
+    def test_retrieve_categories(self):
+        res = self.client().get("/categories")
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertTrue(len(data["categories"]))
+
+    #Retrieve Categories for failure 
+    def test_retrieve_categories_failure(self):
+        res = self.client().get("/categories/")
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'resource not found')
+
+    # def test_create_new_questions(self):
+    #     res = self.client().post('/questions', json=self.new_question)
+    #     data = json.loads(res.data)
+
+    #     self.assertEqual(res.status_code, 200)
+    #     self.assertEqual(data['success'], True)
+    #     self.assertTrue(data['created'])
+    #     self.assertTrue(len(data['questions']))
 
 
 # Make the tests conveniently executable
