@@ -66,7 +66,7 @@ class TriviaTestCase(unittest.TestCase):
 
     #Retrieve Categories for failure 
     def test_retrieve_categories_failure(self):
-        res = self.client().get("/categories/")
+        res = self.client().get("/categories")
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 404)
