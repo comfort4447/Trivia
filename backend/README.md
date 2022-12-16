@@ -90,6 +90,22 @@ You will need to provide detailed documentation of your API endpoints including 
 }
 ```
 
+`GET` `/questions`
+- Fetches a dictionary of questions in which the keys are the ids and the value is the corresponding string of the question
+
+`DELETE` `/questions/<int:question_id>`
+- Delete question from a dictionary of questions with a particular ID
+
+`POST` `/questions`
+- This post a new set of questions into the questions dictionary
+
+`GET` `/categories/<int:category_id>`
+- This get all the questions based on category in the database
+
+`POST` `/quizzes`
+- This helps to play the quiz by getting the previous questions and the posting the answer.
+
+
 ## Testing
 
 Write at least one test for the success and at least one error behavior of each endpoint using the unittest library.
