@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 from flaskr import create_app, Flask
 from models import setup_db, Question, Category
+from settings import DB_NAME, DB_USER, DB_PASSWORD
 
 app = Flask(__name__)
 

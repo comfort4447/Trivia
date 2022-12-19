@@ -91,19 +91,53 @@ You will need to provide detailed documentation of your API endpoints including 
 ```
 
 `GET` `/questions`
-- Fetches a dictionary of questions in which the keys are the ids and the value is the corresponding string of the question
+* Returns all the categories
+  * URI:- http://127.0.0.1:5000/categories
+  * Response
+      * {
+      "categories": {
+          "1": "history",
+          "2": "science",
+          "3" : "Geography",
+          "4" : "History",
+          "5" : "Entertainment",
+          "6" : "Sports"
+          },
+      "success": true
+          }
 
 `DELETE` `/questions/<int:question_id>`
-- Delete question from a dictionary of questions with a particular ID
+  * Deletes question with given ID.
+  * URI:- http://127.0.0.1:5000/questions/12
+  * Response
+      * {
+              "id": 12,
+              "message": "Question deleted successfully ",
+              "success": true
+          }
 
 `POST` `/questions`
-- This post a new set of questions into the questions dictionary
-
-`GET` `/categories/<int:category_id>`
-- This get all the questions based on category in the database
-
-`POST` `/quizzes`
-- This helps to play the quiz by getting the previous questions and the posting the answer.
+* Inserting a new question.
+  * URI:- http://127.0.0.1:5000/questions
+  * JSON file format
+      * {
+          "answer": "blue",
+          "category": "2",
+          "difficulty": 1,    
+          "id": 10,
+          "question": "What is the colour of sky"
+          }
+  * Response
+      * {
+          "question": {
+              "answer": "blue",
+              "category": "2",
+              "difficulty": 1,
+              "id": 17,
+              "question": "What is the colour of sky"
+                      },
+          "success": true
+       }
 
 
 ## Testing
